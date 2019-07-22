@@ -183,6 +183,23 @@ int output_new_password(FILE *fptr, const char *username, const char *password)
 	EVP_DigestFinal_ex(context, hash, &hash_len);
 	EVP_MD_CTX_free(context);
 #endif
+	
+	/*const char* passwd=malloc(sizeof(hash));
+	strcpy(passwd, hash);
+	unsigned char* output=malloc(sizeof(hash)*2); //******FIX ME*****
+	rc = PKCS5_PBKDF2_HMAC(hash, hash_len, salt, SALT_LEN, 1000, digest, hash_len, output);
+	printf("ciao\n");
+	printf("%s\n", output);
+	if(!rc){
+		free(salt64);
+		free(hash64);
+		//free(passwd);
+		fprintf(stderr, "Error: Unable to apply KDF.\n");
+		return 1;
+	}
+
+	//size_t size = sizeof(output);
+	strcpy(hash, output);*/
 
 	rc = base64_encode(hash, hash_len, &hash64);
 	if(rc){

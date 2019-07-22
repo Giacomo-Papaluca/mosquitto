@@ -891,6 +891,24 @@ int mosquitto_unpwd_check_default(struct mosquitto_db *db, struct mosquitto *con
 #ifdef WITH_TLS
 					rc = pw__digest(password, u->salt, u->salt_len, hash, &hash_len);
 					if(rc == MOSQ_ERR_SUCCESS){
+						unsigned char* output=malloc(sizeof(hash)*2); //*******FIX ME******
+						const EVP_MD* digest=EVP_get_digestbyname("sha512");
+						time_t before, after;
+						time(&before);
+						PKCS5_PBKDF2_HMAC(hash, hash_len, u->salt, u->salt_len, 9990000, digest, hash_len, output);
+						time(&after);
+						printf("%F secondi\n", difftime(after, before));
+						/*if(!rc2){
+							free(salt64);
+							free(hash64);
+							//free(passwd);
+							fprintf(stderr, "Error: Unable to apply KDF.\n");
+							return 1;
+						}
+
+						size_t size = sizeof(output);
+						memcpy(hash, output, size);*/
+						
 						if(hash_len == u->password_len && !mosquitto__memcmp_const(u->password, hash, hash_len)){
 							return MOSQ_ERR_SUCCESS;
 						}else{
