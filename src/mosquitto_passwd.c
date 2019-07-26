@@ -138,14 +138,15 @@ int output_new_password(FILE *fptr, const char *username, const char *password)
 	int rc;
 	unsigned char salt[SALT_LEN];
 	char *salt64 = NULL, *hash64 = NULL;
-	unsigned char hash[EVP_MAX_MD_SIZE];
-	unsigned int hash_len;
+	unsigned int dkey_len=EVP_MAX_MD_SIZE;
+	unsigned char dkey[dkey_len];
+	//unsigned int hash_len;
 	const EVP_MD *digest;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+/*#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	EVP_MD_CTX context;
 #else
 	EVP_MD_CTX *context;
-#endif
+#endif*/
 
 	rc = RAND_bytes(salt, SALT_LEN);
 	if(!rc){
@@ -169,39 +170,32 @@ int output_new_password(FILE *fptr, const char *username, const char *password)
 	}
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-	EVP_MD_CTX_init(&context);
-	EVP_DigestInit_ex(&context, digest, NULL);
-	EVP_DigestUpdate(&context, password, strlen(password));
-	EVP_DigestUpdate(&context, salt, SALT_LEN);
-	EVP_DigestFinal_ex(&context, hash, &hash_len);
-	EVP_MD_CTX_cleanup(&context);
+	//EVP_MD_CTX_init(&context);
+	//EVP_DigestInit_ex(&context, digest, NULL);
+	//EVP_DigestFinal_ex(&context, hash, &hash_len);
+	time_t before,after;
+	time(&before);
+	PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_LEN, 990000, digest, dkey_len, dkey);
+	time(&after);
+	printf("%f secondi", difftime(after, before));
+	//EVP_DigestUpdate(&context, dkey, dkey_len);
+	//EVP_DigestUpdate(&context, salt, SALT_LEN);
+	//EVP_MD_CTX_cleanup(&context);
 #else
-	context = EVP_MD_CTX_new();
-	EVP_DigestInit_ex(context, digest, NULL);
-	EVP_DigestUpdate(context, password, strlen(password));
-	EVP_DigestUpdate(context, salt, SALT_LEN);
-	EVP_DigestFinal_ex(context, hash, &hash_len);
-	EVP_MD_CTX_free(context);
+	//context = EVP_MD_CTX_new();
+	//EVP_DigestInit_ex(context, digest, NULL);
+	//EVP_DigestFinal_ex(context, hash, &hash_len);
+	time_t before,after;
+	time(&before);
+	PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_LEN, 990000, digest, dkey_len, dkey);
+	time(&after);
+	printf("%f secondi", difftime(after, before));
+	//EVP_DigestUpdate(context, dkey, dkey_len);
+	//EVP_DigestUpdate(context, salt, SALT_LEN);
+	//EVP_MD_CTX_free(context);
 #endif
 	
-	/*const char* passwd=malloc(sizeof(hash));
-	strcpy(passwd, hash);
-	unsigned char* output=malloc(sizeof(hash)*2); //******FIX ME*****
-	rc = PKCS5_PBKDF2_HMAC(hash, hash_len, salt, SALT_LEN, 1000, digest, hash_len, output);
-	printf("ciao\n");
-	printf("%s\n", output);
-	if(!rc){
-		free(salt64);
-		free(hash64);
-		//free(passwd);
-		fprintf(stderr, "Error: Unable to apply KDF.\n");
-		return 1;
-	}
-
-	//size_t size = sizeof(output);
-	strcpy(hash, output);*/
-
-	rc = base64_encode(hash, hash_len, &hash64);
+	rc = base64_encode(dkey, dkey_len, &hash64);
 	if(rc){
 		free(salt64);
 		free(hash64);

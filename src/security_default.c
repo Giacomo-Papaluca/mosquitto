@@ -22,6 +22,7 @@ Contributors:
 #include "mosquitto_broker_internal.h"
 #include "memory_mosq.h"
 #include "util_mosq.h"
+#include <time.h>
 
 static int aclfile__parse(struct mosquitto_db *db, struct mosquitto__security_options *security_opts);
 static int unpwd__file_parse(struct mosquitto__unpwd **unpwd, const char *password_file);
@@ -29,7 +30,7 @@ static int acl__cleanup(struct mosquitto_db *db, bool reload);
 static int unpwd__cleanup(struct mosquitto__unpwd **unpwd, bool reload);
 static int psk__file_parse(struct mosquitto_db *db, struct mosquitto__unpwd **psk_id, const char *psk_file);
 #ifdef WITH_TLS
-static int pw__digest(const char *password, const unsigned char *salt, unsigned int salt_len, unsigned char *hash, unsigned int *hash_len);
+//static int pw__digest(const char *password, const unsigned char *salt, unsigned int salt_len, unsigned char *hash, unsigned int *hash_len);
 static int base64__decode(char *in, unsigned char **decoded, unsigned int *decoded_len);
 static int mosquitto__memcmp_const(const void *ptr1, const void *b, size_t len);
 #endif
@@ -858,11 +859,14 @@ static int mosquitto__memcmp_const(const void *a, const void *b, size_t len)
 
 int mosquitto_unpwd_check_default(struct mosquitto_db *db, struct mosquitto *context, const char *username, const char *password)
 {
+	
 	struct mosquitto__unpwd *u, *tmp;
 	struct mosquitto__unpwd *unpwd_ref;
 #ifdef WITH_TLS
-	unsigned char hash[EVP_MAX_MD_SIZE];
-	unsigned int hash_len;
+	//unsigned char hash[EVP_MAX_MD_SIZE];
+	//unsigned int hash_len;
+	unsigned int dkey_len=EVP_MAX_MD_SIZE;
+	unsigned char dkey[dkey_len];
 	int rc;
 #endif
 
@@ -889,27 +893,15 @@ int mosquitto_unpwd_check_default(struct mosquitto_db *db, struct mosquitto *con
 			if(u->password){
 				if(password){
 #ifdef WITH_TLS
-					rc = pw__digest(password, u->salt, u->salt_len, hash, &hash_len);
-					if(rc == MOSQ_ERR_SUCCESS){
-						unsigned char* output=malloc(sizeof(hash)*2); //*******FIX ME******
-						const EVP_MD* digest=EVP_get_digestbyname("sha512");
-						time_t before, after;
-						time(&before);
-						PKCS5_PBKDF2_HMAC(hash, hash_len, u->salt, u->salt_len, 9990000, digest, hash_len, output);
-						time(&after);
-						printf("%F secondi\n", difftime(after, before));
-						/*if(!rc2){
-							free(salt64);
-							free(hash64);
-							//free(passwd);
-							fprintf(stderr, "Error: Unable to apply KDF.\n");
-							return 1;
-						}
-
-						size_t size = sizeof(output);
-						memcpy(hash, output, size);*/
-						
-						if(hash_len == u->password_len && !mosquitto__memcmp_const(u->password, hash, hash_len)){
+					time_t before, after;
+					//rc = pw__digest(password, u->salt, u->salt_len, hash, &hash_len);
+					const EVP_MD *digest=EVP_get_digestbyname("sha512");
+					time(&before);
+					rc=PKCS5_PBKDF2_HMAC(password, strlen(password), u->salt, u->salt_len, 990000, digest, dkey_len, dkey);
+					time(&after);
+					if(rc == 1){
+						printf("%f secondi\n", difftime(after, before));
+						if(dkey_len == u->password_len && !mosquitto__memcmp_const(u->password, dkey, dkey_len)){
 							return MOSQ_ERR_SUCCESS;
 						}else{
 							return MOSQ_ERR_AUTH;
@@ -1063,9 +1055,10 @@ int mosquitto_psk_key_get_default(struct mosquitto_db *db, struct mosquitto *con
 }
 
 #ifdef WITH_TLS
-int pw__digest(const char *password, const unsigned char *salt, unsigned int salt_len, unsigned char *hash, unsigned int *hash_len)
+/*int pw__digest(const char *password, const unsigned char *salt, unsigned int salt_len, unsigned char *hash, unsigned int *hash_len)
 {
 	const EVP_MD *digest;
+	time_t before, after;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	EVP_MD_CTX context;
 
@@ -1077,9 +1070,9 @@ int pw__digest(const char *password, const unsigned char *salt, unsigned int sal
 
 	EVP_MD_CTX_init(&context);
 	EVP_DigestInit_ex(&context, digest, NULL);
-	EVP_DigestUpdate(&context, password, strlen(password));
+	EVP_DigestUpdate(&context, hash, hash_len);
 	EVP_DigestUpdate(&context, salt, salt_len);
-	/* hash is assumed to be EVP_MAX_MD_SIZE bytes long. */
+	// hash is assumed to be EVP_MAX_MD_SIZE bytes long. 
 	EVP_DigestFinal_ex(&context, hash, hash_len);
 	EVP_MD_CTX_cleanup(&context);
 #else
@@ -1095,13 +1088,13 @@ int pw__digest(const char *password, const unsigned char *salt, unsigned int sal
 	EVP_DigestInit_ex(context, digest, NULL);
 	EVP_DigestUpdate(context, password, strlen(password));
 	EVP_DigestUpdate(context, salt, salt_len);
-	/* hash is assumed to be EVP_MAX_MD_SIZE bytes long. */
+	// hash is assumed to be EVP_MAX_MD_SIZE bytes long. 
 	EVP_DigestFinal_ex(context, hash, hash_len);
 	EVP_MD_CTX_free(context);
 #endif
 
 	return MOSQ_ERR_SUCCESS;
-}
+}*/
 
 int base64__decode(char *in, unsigned char **decoded, unsigned int *decoded_len)
 {
