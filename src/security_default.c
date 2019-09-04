@@ -893,14 +893,16 @@ int mosquitto_unpwd_check_default(struct mosquitto_db *db, struct mosquitto *con
 			if(u->password){
 				if(password){
 #ifdef WITH_TLS
-					time_t before, after;
+					clock_t before, after;
+					double kdf_time;
 					//rc = pw__digest(password, u->salt, u->salt_len, hash, &hash_len);
 					const EVP_MD *digest=EVP_get_digestbyname("sha512");
-					time(&before);
+					before=clock();
 					rc=PKCS5_PBKDF2_HMAC(password, strlen(password), u->salt, u->salt_len, 990000, digest, dkey_len, dkey);
-					time(&after);
+					after=clock();
 					if(rc == 1){
-						printf("%f secondi\n", difftime(after, before));
+						kdf_time=((double) (after - before))/ CLOCKS_PER_SEC;
+						printf("%f seconds\n", kdf_time);
 						if(dkey_len == u->password_len && !mosquitto__memcmp_const(u->password, dkey, dkey_len)){
 							return MOSQ_ERR_SUCCESS;
 						}else{
