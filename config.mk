@@ -59,13 +59,13 @@ WITH_SYS_TREE:=yes
 
 # Build with systemd support. If enabled, mosquitto will notify systemd after
 # initialization. See README in service/systemd/ for more information.
-WITH_SYSTEMD:=no
+WITH_SYSTEMD:=yes
 
 # Build with SRV lookup support.
 WITH_SRV:=no
 
 # Build with websockets support on the broker.
-WITH_WEBSOCKETS:=no
+WITH_WEBSOCKETS:=yes
 
 # Use elliptic keys in broker
 WITH_EC:=yes
