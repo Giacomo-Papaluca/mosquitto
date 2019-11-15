@@ -65,7 +65,7 @@ WITH_SYSTEMD:=yes
 WITH_SRV:=no
 
 # Build with websockets support on the broker.
-WITH_WEBSOCKETS:=yes
+WITH_WEBSOCKETS:=no
 
 # Use elliptic keys in broker
 WITH_EC:=yes

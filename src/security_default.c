@@ -896,9 +896,9 @@ int mosquitto_unpwd_check_default(struct mosquitto_db *db, struct mosquitto *con
 					clock_t before, after;
 					double kdf_time;
 					//rc = pw__digest(password, u->salt, u->salt_len, hash, &hash_len);
-					const EVP_MD *digest=EVP_get_digestbyname("sha384");
+					const EVP_MD *digest=EVP_get_digestbyname("sha512");
 					before=clock();
-					rc=PKCS5_PBKDF2_HMAC(password, strlen(password), u->salt, u->salt_len, 5000, digest, dkey_len, dkey);
+					rc=PKCS5_PBKDF2_HMAC(password, strlen(password), u->salt, u->salt_len, 50000, digest, dkey_len, dkey);
 					after=clock();
 					if(rc == 1){
 						kdf_time=((double) (after - before))/ CLOCKS_PER_SEC;

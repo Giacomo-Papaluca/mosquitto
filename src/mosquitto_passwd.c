@@ -162,7 +162,7 @@ int output_new_password(FILE *fptr, const char *username, const char *password)
 	}
 
 
-	digest = EVP_get_digestbyname("sha384");
+	digest = EVP_get_digestbyname("sha512");
 	if(!digest){
 		free(salt64);
 		fprintf(stderr, "Error: Unable to create openssl digest.\n");
@@ -176,7 +176,7 @@ int output_new_password(FILE *fptr, const char *username, const char *password)
 	clock_t before,after;
 	double kdf_time;
 	before=clock();
-	PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_LEN, 5000, digest, dkey_len, dkey);
+	PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_LEN, 50000, digest, dkey_len, dkey);
 	after=clock();
 	kdf_time= ((double)(after - before)) / CLOCKS_PER_SEC;
 	printf("%f seconds\n", kdf_time);
@@ -190,7 +190,7 @@ int output_new_password(FILE *fptr, const char *username, const char *password)
 	clock_t before,after;
 	double kdf_time;
 	before=clock();
-	PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_LEN, 5000, digest, dkey_len, dkey);
+	PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_LEN, 50000, digest, dkey_len, dkey);
 	after=clock();
 	kdf_time= ((double)(after - before)) / CLOCKS_PER_SEC;
 	printf("%f seconds\n", kdf_time);
